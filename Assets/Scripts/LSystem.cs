@@ -1,40 +1,25 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
-
-[Serializable]
-public class Rules
-{
-    public char symbol;
-    public string result;
-    public Rules(char symbol, string result)
-    {
-        this.symbol = symbol;
-        this.result = result;
-    }
-}
-public class TransformInfo
-{
-    public Vector3 position;
-    public Quaternion rotation;
-}
+using UnityEngine.UI;
 
 public class LSystem: MonoBehaviour
 {
     // axiom
     public string axiom = "F";
-    // static rule
-    public string rule = "F-F++F-F";
-    //public List<Rules> rules = new List<Rules>();
+    public List<Rules> rules = new List<Rules>();
+    // current rule
+    [SerializeField] private int currentRule = 0;
     // number of iterations
-    public int iterations = 3;
+    [SerializeField] private int iterations = 3;
     // angle
-    public float angle = 90f;
+    [SerializeField] private float angle = 25f;
     // length
-    public float length = 1f;
+    [SerializeField] private float length = 1f;
     // width
-    public float width = 1f;
+    [SerializeField] private float width = 1f;
     // start position
     public Vector3 startPosition = Vector3.zero;
     // start rotation
@@ -42,17 +27,54 @@ public class LSystem: MonoBehaviour
     // line renderer
     public LineRenderer lineRenderer;
     // stack for position and rotation
-    Stack<TransformInfo> positionStack = new Stack<TransformInfo>();
+    Stack<TransformStore> positionStack = new Stack<TransformStore>();
+    private List<GameObject> children = new List<GameObject>();
 
+    [SerializeField] private Material branchMat;
+
+    [SerializeField] private GameObject cube;
+
+    // Sliders
+    [SerializeField] private Slider iterationSlider;
+    [SerializeField] private Slider angleSlider;
+    [SerializeField] private Slider ruleSlider;
+    
+    [SerializeField] private TextMeshProUGUI iterationText;
+    [SerializeField] private TextMeshProUGUI angleText;
+    [SerializeField] private TextMeshProUGUI ruleText;
     // Start is called before the first frame update
     void Start()
     {
+        TreeGen();
+        // Sliders
+        iterationSlider.value = iterations;
+        angleSlider.value = angle;
+        ruleSlider.value = currentRule;
+        ruleSlider.maxValue = rules.Count - 1;
+
+        iterationText.text = iterations.ToString();
+        angleText.text = angle.ToString();
+        ruleText.text = currentRule.ToString();
+
+        iterationSlider.onValueChanged.AddListener(delegate { SetIterations(); });
+        angleSlider.onValueChanged.AddListener(delegate { SetAngle(); });
+        ruleSlider.onValueChanged.AddListener(delegate { SetRule(); });
+
+    }
+    public void TreeGen()
+    {
+        //destroy old tree
+        foreach (Transform transform in transform)
+        {
+            Destroy(transform.gameObject);
+        }
+        startPosition = transform.position;
         // generate the string
-        string generatedString = GenerateString(axiom, rule, iterations);
+        string generatedString = GenerateString(axiom, rules[currentRule].result, iterations);
         // draw the string
         DrawString(generatedString);
     }
-    
+
     //generate the string
     string GenerateString(string axiom, string rule, int iterations)
     {
@@ -120,24 +142,26 @@ public class LSystem: MonoBehaviour
                     break;
                 case '+':
                     // rotate the rotation left
-                    rotation *= Quaternion.Euler(0f, 0f, -angle);
+                    rotation *= Quaternion.Euler(-angle, 0f, -angle);
                 break;
                 case '-':
                     // rotate the rotation right
-                    rotation *= Quaternion.Euler(0f, 0f, angle);
+                    rotation *= Quaternion.Euler(angle, 0f, angle);
                 break;
                 case '[':
                     // push the position and rotation to the stack
-                    positionStack.Push(new TransformInfo { position = position, rotation = rotation });
+                    positionStack.Push(new TransformStore { position = position, rotation = rotation });
                     break;
                 case ']':
                     // pop the position and rotation from the stack
-                    TransformInfo ti = positionStack.Pop();
+                    TransformStore ti = positionStack.Pop();
+                    // Place a leaf
+                    children.Add(Instantiate(cube, position, rotation,transform));
+                    // Restore the position and rotation
                     position = ti.position;
                     rotation = ti.rotation;
                     break;
             }
-           
         }
     }
 
@@ -146,6 +170,7 @@ public class LSystem: MonoBehaviour
     {
         //create a new game object
         GameObject line = new("Line");
+        children.Add(line);
         //set the parent
         line.transform.parent = transform;
         //set the position and rotation
@@ -153,16 +178,32 @@ public class LSystem: MonoBehaviour
         //add a line renderer
         LineRenderer lineRenderer = line.AddComponent<LineRenderer>();
         lineRenderer.useWorldSpace = true;
-        //set the start width
+        //set the width
         lineRenderer.startWidth = width;
-        //set the end width
         lineRenderer.endWidth = width;
+        lineRenderer.material = branchMat;
         //set the position count
         lineRenderer.positionCount = 2;
-        //set the start position
+        //set the start and end position
         lineRenderer.SetPosition(0, startPosition);
-        //set the end position
         lineRenderer.SetPosition(1, position);
+    }
+
+    public void SetIterations()
+    {
+        iterations = (int)iterationSlider.value;
+        iterationText.text = iterations.ToString();
+    }
+    public void SetAngle()
+    {
+        angle = (int)angleSlider.value;
+        angleText.text = angle.ToString();
+    }
+    
+    public void SetRule()
+    {
+        currentRule = (int)ruleSlider.value;
+        ruleText.text = currentRule.ToString();
     }
 
 }
