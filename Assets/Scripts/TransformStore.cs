@@ -6,4 +6,5 @@ public class TransformStore
 {
     public Vector3 position;
     public Quaternion rotation;
+    public float width;
 }
