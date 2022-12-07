@@ -1,8 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting.Antlr3.Runtime.Tree;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 [RequireComponent(typeof(MeshFilter))]
 public class MeshGenerator : MonoBehaviour
@@ -12,7 +10,7 @@ public class MeshGenerator : MonoBehaviour
     int[] triangles;
     
     public int _basePolygon = 20;
-    public float _radius = 0.1f;
+    public float _radius = 0.001f;
     public float _height = 1f;
 
     [SerializeField] private GameObject cube;
@@ -37,14 +35,15 @@ public class MeshGenerator : MonoBehaviour
         {
             angle += angularStep;
 
-            Vector3 pos = new Vector3(Mathf.Cos(angle), position.y, Mathf.Sin(angle));
-            Debug.Log(pos);
-            GameObject cubes = Instantiate(cube, _radius * pos, rotation, transform);
+            Vector3 pos = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+            Vector3 finalpos = position + pos * _radius;
+            // Debug to visualise points that the vertices would be at
+            GameObject cubes = Instantiate(cube, finalpos, rotation, transform);
             
             startVertices[j] = pos;
             startUv[j] = new Vector2(j*angularStep, startVertices[j].y);
         }
-        //UpdateMesh();
+
     }
     void UpdateMesh()
     {

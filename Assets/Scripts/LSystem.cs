@@ -1,11 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using static UnityEngine.GraphicsBuffer;
 using Random = UnityEngine.Random;
 public class LSystem: MonoBehaviour
 {
@@ -27,7 +25,7 @@ public class LSystem: MonoBehaviour
     private Vector3 startPosition = Vector3.zero;
     // start rotation
     private Quaternion startRotation = Quaternion.identity;
-    // stack for position and rotation
+    // stack for position and rotation when branches need to be made
     Stack<TransformStore> positionStack = new Stack<TransformStore>();
     private List<GameObject> children = new List<GameObject>();
     
@@ -58,29 +56,12 @@ public class LSystem: MonoBehaviour
         meshGenerator = GetComponent<MeshGenerator>();
         TreeGen();
         // Sliders
-        iterationSlider.value = iterations;
-        angleSlider.value = angle;
-        ruleSlider.value = currentRule;
-        ruleSlider.maxValue = rules.Count - 1;
-        lengthSlider.value = length;
-        widthSlider.value = width;
-
-        iterationText.text = iterations.ToString();
-        angleText.text = angle.ToString();
-        ruleText.text = currentRule.ToString();
-        lengthText.text = length.ToString();
-        widthText.text = width.ToString();
-
-        iterationSlider.onValueChanged.AddListener(delegate { SetIterations(); });
-        angleSlider.onValueChanged.AddListener(delegate { SetAngle(); });
-        ruleSlider.onValueChanged.AddListener(delegate { SetRule(); });
-        lengthSlider.onValueChanged.AddListener(delegate { SetLength(); });
-        widthSlider.onValueChanged.AddListener(delegate { SetWidth(); });
+        StartSliders();
 
     }
     public void TreeGen()
     {
-        //destroy old tree
+        // destroy old tree
         foreach (Transform transform in transform)
         {
             Destroy(transform.gameObject);
@@ -92,12 +73,10 @@ public class LSystem: MonoBehaviour
         DrawString(generatedString);
     }
 
-    //generate the string
+    // generate the string
     string GenerateString(string axiom, string rule, int iterations)
     {
-        // current string
         string currentString = axiom;
-        // next string
         string nextString = "";
 
         // loop through the iterations
@@ -117,13 +96,11 @@ public class LSystem: MonoBehaviour
                         break;
                     }
                 }
-                // if the current character is an F
                 if (currentString[j] == 'F')
                 {
                     //add the rule to the next string
                     nextString += rule;
                 }
-                // if the current character is not an F
                 else
                 {
                     // add the current character to the next string
@@ -136,8 +113,6 @@ public class LSystem: MonoBehaviour
             //reset the next string
             nextString = "";
         }
-
-        // return the current string
         Debug.Log(currentString);
         return currentString;
     }
@@ -145,9 +120,8 @@ public class LSystem: MonoBehaviour
     //draw the string
     void DrawString(string generatedString)
     {
-        //set the position
+        //set the position and rotation
         Vector3 position = startPosition;
-        //set the rotation
         Quaternion rotation = startRotation;
 
         //loop through the generated string
@@ -163,7 +137,8 @@ public class LSystem: MonoBehaviour
                     meshGenerator.CreateShape(startPosition, position, rotation, width);
                     
                     // move forward draw a line
-                    DrawLine(position, rotation, length, width);
+                    // 2D LineRender Method
+                    //DrawLine(position, rotation, length, width);
                     DrawCylinders(position, rotation, length, width);
 
                     break;
@@ -240,7 +215,6 @@ public class LSystem: MonoBehaviour
         children.Add(line);
         //set the parent
         line.transform.parent = transform;
-        //set the position and rotation
         line.transform.SetPositionAndRotation(position, rotation);
         //add a line renderer
         LineRenderer lineRenderer = line.AddComponent<LineRenderer>();
@@ -258,15 +232,36 @@ public class LSystem: MonoBehaviour
 
     void DrawCylinders(Vector3 position, Quaternion rotation, float length, float width)
     {
-    GameObject branch = Instantiate(cylinder, startPosition,Quaternion.identity, transform);
-    var offset = position - startPosition;
-    branch.transform.localScale = new Vector3(width, width, offset.magnitude / 2);
+        GameObject branch = Instantiate(cylinder, startPosition,Quaternion.identity, transform);
+        var offset = position - startPosition;
+        branch.transform.localScale = new Vector3(width, width, offset.magnitude / 2);
 
-    branch.transform.LookAt(position);
-    GameObject body = branch.transform.GetChild(0).gameObject;
-    body.transform.localPosition += new Vector3(0f,0f,1f);
+        branch.transform.LookAt(position);
+        GameObject body = branch.transform.GetChild(0).gameObject;
+        body.transform.localPosition += new Vector3(0f,0f,1f);
     }
 
+    private void StartSliders()
+    {
+        iterationSlider.value = iterations;
+        angleSlider.value = angle;
+        ruleSlider.value = currentRule;
+        ruleSlider.maxValue = rules.Count - 1;
+        lengthSlider.value = length;
+        widthSlider.value = width;
+
+        iterationText.text = iterations.ToString();
+        angleText.text = angle.ToString();
+        ruleText.text = currentRule.ToString();
+        lengthText.text = length.ToString();
+        widthText.text = width.ToString();
+
+        iterationSlider.onValueChanged.AddListener(delegate { SetIterations(); });
+        angleSlider.onValueChanged.AddListener(delegate { SetAngle(); });
+        ruleSlider.onValueChanged.AddListener(delegate { SetRule(); });
+        lengthSlider.onValueChanged.AddListener(delegate { SetLength(); });
+        widthSlider.onValueChanged.AddListener(delegate { SetWidth(); });
+    }
     public void SetIterations()
     {
         iterations = (int)iterationSlider.value;
@@ -277,7 +272,6 @@ public class LSystem: MonoBehaviour
         angle = (int)angleSlider.value;
         angleText.text = angle.ToString();
     }
-    
     public void SetRule()
     {
         currentRule = (int)ruleSlider.value;
@@ -293,6 +287,5 @@ public class LSystem: MonoBehaviour
         width = widthSlider.value;
         widthText.text = width.ToString();
     }
-
 
 }
