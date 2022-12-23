@@ -115,10 +115,10 @@ MonoBehaviour:
   rules:
   - symbol: 70
     result: FFYYYX[xFZFzF]z[ZFzFzF]
-    probability: 0.25
+    probability: 0.5
   - symbol: 70
     result: FY[+F]F[-F][F]
-    probability: 0.5
+    probability: 0.25
   - symbol: 70
     result: FF-[-F+ZF+F]+ [+F-XF-FX]
     probability: 0.25
@@ -212,3 +212,4 @@ MonoBehaviour:
   _radius: 0.01
   _height: 1
   cube: {fileID: 4806688061106129235, guid: 0890cae641d8a6b40838128905f5ae52, type: 3}
+  BranchHolder: {fileID: 2805457151485053919}

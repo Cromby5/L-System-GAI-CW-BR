@@ -87,6 +87,7 @@ public class LSystem: MonoBehaviour
         {
             Destroy(temp);
         }
+        Resources.UnloadUnusedAssets(); // This should prevent the memory leak from the previous tree generations if you start spamming generate
         startPosition = transform.position;
         // generate the string
         string generatedString = GenerateString(axiom, rules[currentRule].result, iterations);
@@ -136,14 +137,14 @@ public class LSystem: MonoBehaviour
         return currentString;
     }
 
-    //draw the string
+
     void DrawString(string generatedString)
     {
-        //set the position and rotation
+        // set the position and rotation
         Vector3 position = startPosition;
         Quaternion rotation = startRotation;
 
-        //loop through the generated string
+        // loop through the generated string
         for (int i = 0; i < generatedString.Length; i++)
         {
             switch(generatedString[i])
@@ -236,14 +237,17 @@ public class LSystem: MonoBehaviour
         switch (mySelection)
         {
             case Select.Line:
-
+                //CombineLeafMesh();
                 break;
             case Select.Cylinders:
                 // 3D Cylinder Method
                 CombineCylinderMesh();
+                CombineLeafMesh();
                 break;
             case Select.Mesh:
-
+                // Only used to join up the cubes as mesh implmentation failed
+                CombineCylinderMesh();
+                CombineLeafMesh();
                 break;
         }
     }
@@ -251,21 +255,21 @@ public class LSystem: MonoBehaviour
     // Draw a line in 2d using the line renderer 
     void DrawLine(Vector3 position, Quaternion rotation, float length, float width)
     {
-        //create a new game object
+        // create a new game object
         GameObject line = new("Line");
-        //set the parent
+        // set the parent
         line.transform.parent = BranchHolder;
         line.transform.SetPositionAndRotation(position, rotation);
-        //add a line renderer
+        // add a line renderer
         LineRenderer lineRenderer = line.AddComponent<LineRenderer>();
         lineRenderer.useWorldSpace = true;
-        //set the width
+        // set the width
         lineRenderer.startWidth = width;
         lineRenderer.endWidth = width;
         lineRenderer.material = branchMat;
-        //set the position count
+        // set the position count
         lineRenderer.positionCount = 2;
-        //set the start and end position
+        // set the start and end position
         lineRenderer.SetPosition(0, startPosition);
         lineRenderer.SetPosition(1, position);
     }
@@ -274,20 +278,17 @@ public class LSystem: MonoBehaviour
     {
         GameObject branch = Instantiate(cylinder, startPosition,Quaternion.identity, BranchHolder);
         var offset = position - startPosition;
-        branch.transform.localScale = new Vector3(width, width, offset.magnitude / 2);
+        branch.transform.localScale = new Vector3(width, width, offset.magnitude / 2); // The Z axis is used as the scale to match the length of the branch as the LookAt will be used to rotate the cylinder (which uses the Z axis)
 
         branch.transform.LookAt(position);
         GameObject body = branch.transform.GetChild(0).gameObject;
-        body.transform.localPosition += new Vector3(0f,0f,1f);
+        body.transform.localPosition += new Vector3(0f,0f,1f); // Offset put the cylinder back into place
     }
     
     void CombineCylinderMesh()
     {
         MeshFilter[] BranchmeshFilters = BranchHolder.GetComponentsInChildren<MeshFilter>();
-        MeshFilter[] LeafmeshFilters = LeafHolder.GetComponentsInChildren<MeshFilter>();
-        
         CombineInstance[] combineBranch = new CombineInstance[BranchmeshFilters.Length];
-        CombineInstance[] combineLeaf = new CombineInstance[LeafmeshFilters.Length];
 
         int i = 0;
         while (i < BranchmeshFilters.Length)
@@ -298,6 +299,23 @@ public class LSystem: MonoBehaviour
 
             i++;
         }
+        // Tree
+        temp = new GameObject("Tree");
+        // temp mesh filter
+        MeshFilter tempMeshFilter = temp.AddComponent<MeshFilter>();
+        tempMeshFilter.mesh.Clear();
+        // temp mesh renderer
+        MeshRenderer tempMeshRenderer = temp.AddComponent<MeshRenderer>();
+        tempMeshRenderer.material = branchMat;
+        // combine the meshes
+        tempMeshFilter.mesh = new Mesh();
+        tempMeshFilter.mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+        tempMeshFilter.mesh.CombineMeshes(combineBranch);
+    }
+    void CombineLeafMesh()
+    {
+        MeshFilter[] LeafmeshFilters = LeafHolder.GetComponentsInChildren<MeshFilter>();
+        CombineInstance[] combineLeaf = new CombineInstance[LeafmeshFilters.Length];
         int j = 0;
         while (j < LeafmeshFilters.Length)
         {
@@ -307,32 +325,18 @@ public class LSystem: MonoBehaviour
 
             j++;
         }
-        temp = new GameObject("Tree");
-        //temp mesh filter
-        MeshFilter tempMeshFilter = temp.AddComponent<MeshFilter>();
-        //temp mesh renderer
-        MeshRenderer tempMeshRenderer = temp.AddComponent<MeshRenderer>();
-        tempMeshRenderer.material = branchMat;
-        //combine the meshes
-        tempMeshFilter.mesh = new Mesh();
-        tempMeshFilter.mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
-        tempMeshFilter.mesh.CombineMeshes(combineBranch);
-        
+        // Leaves
         GameObject Treeleaves = new GameObject("Leaves");
         Treeleaves.transform.parent = temp.transform;
         MeshFilter tempMeshFilterLeaf = Treeleaves.AddComponent<MeshFilter>();
+        tempMeshFilterLeaf.mesh.Clear();
         MeshRenderer tempMeshRendererLeaf = Treeleaves.AddComponent<MeshRenderer>();
         tempMeshRendererLeaf.material = leafMat;
         tempMeshFilterLeaf.mesh = new Mesh();
         tempMeshFilterLeaf.mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
         tempMeshFilterLeaf.mesh.CombineMeshes(combineLeaf);
-
-
-        //transform.GetComponent<MeshFilter>().mesh = new Mesh();
-        //transform.GetComponent<MeshFilter>().mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
-        //transform.GetComponent<MeshFilter>().mesh.CombineMeshes(combine);
-        //transform.gameObject.SetActive(true);
     }
+
 
     private void StartSliders()
     {

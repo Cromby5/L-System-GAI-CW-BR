@@ -14,7 +14,8 @@ public class MeshGenerator : MonoBehaviour
     public float _height = 1f;
 
     [SerializeField] private GameObject cube;
-    
+    [SerializeField] private Transform BranchHolder;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -38,7 +39,7 @@ public class MeshGenerator : MonoBehaviour
             Vector3 pos = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
             Vector3 finalpos = position + pos * _radius;
             // Debug to visualise points that the vertices would be at
-            GameObject cubes = Instantiate(cube, finalpos, rotation, transform);
+            GameObject cubes = Instantiate(cube, finalpos, rotation, BranchHolder);
             
             startVertices[j] = pos;
             startUv[j] = new Vector2(j*angularStep, startVertices[j].y);
